@@ -45,4 +45,35 @@ $regPath = "HKCU:\Software\Classes\roblox-player\shell\open\command"
 New-Item -Path $regPath -Force | Out-Null
 Set-ItemProperty -Path $regPath -Name "(Default)" -Value $registryValue
 
+$startMenuPath = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
+$searchPaths = @($desktopPath, $startMenuPath)
+
+$shell = New-Object -ComObject WScript.Shell
+$foundShortcuts = @()
+
+foreach ($searchPath in $searchPaths) {
+    if (Test-Path $searchPath) {
+        $shortcuts = Get-ChildItem -Path $searchPath -Filter "*.lnk" -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -inotmatch "studio|manager|account" -and $_.BaseName -imatch "roblox" }
+        $foundShortcuts += $shortcuts
+    }
+}
+
+if ($foundShortcuts.Count -gt 0) {
+    foreach ($sc in $foundShortcuts) {
+        $lnk = $shell.CreateShortcut($sc.FullName)
+        $lnk.TargetPath = $exePath
+        $lnk.Save()
+    }
+} else {
+    foreach ($searchPath in $searchPaths) {
+        if (Test-Path $searchPath) {
+            $newLnkPath = Join-Path $searchPath "Roblox.lnk"
+            $lnk = $shell.CreateShortcut($newLnkPath)
+            $lnk.TargetPath = $exePath
+            $lnk.Save()
+        }
+    }
+}
+
 Write-Host "Finished setting up Volt, now restart the Volt application and press Install Now, it will be then ready to use"
+Write-Host "BUY VOLT FROM HERE: https://wyv.gg/ref/tainted/"
