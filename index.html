@@ -49,29 +49,30 @@ $startMenuPath = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
 $searchPaths = @($desktopPath, $startMenuPath)
 
 $shell = New-Object -ComObject WScript.Shell
-$foundShortcuts = @()
 
 foreach ($searchPath in $searchPaths) {
-    if (Test-Path $searchPath) {
-        $shortcuts = Get-ChildItem -Path $searchPath -Filter "*.lnk" -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -inotmatch "studio|manager|account" -and $_.BaseName -imatch "roblox" }
-        $foundShortcuts += $shortcuts
-    }
-}
+    if (-not (Test-Path $searchPath)) { continue }
 
-if ($foundShortcuts.Count -gt 0) {
-    foreach ($sc in $foundShortcuts) {
-        $lnk = $shell.CreateShortcut($sc.FullName)
+    $found = $false
+    $shortcuts = Get-ChildItem -Path $searchPath -Filter "*.lnk" -ErrorAction SilentlyContinue
+    foreach ($sc in $shortcuts) {
+        try {
+            $lnk = $shell.CreateShortcut($sc.FullName)
+            if ($lnk.TargetPath -match "RobloxPlayerBeta\.exe$") {
+                $lnk.TargetPath = $exePath
+                $lnk.Save()
+                $found = $true
+            }
+        } catch {
+            continue
+        }
+    }
+
+    if (-not $found) {
+        $newLnkPath = Join-Path $searchPath "Roblox.lnk"
+        $lnk = $shell.CreateShortcut($newLnkPath)
         $lnk.TargetPath = $exePath
         $lnk.Save()
-    }
-} else {
-    foreach ($searchPath in $searchPaths) {
-        if (Test-Path $searchPath) {
-            $newLnkPath = Join-Path $searchPath "Roblox.lnk"
-            $lnk = $shell.CreateShortcut($newLnkPath)
-            $lnk.TargetPath = $exePath
-            $lnk.Save()
-        }
     }
 }
 
