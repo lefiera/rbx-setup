@@ -1,7 +1,25 @@
-$versionUrl = "https://raw.githubusercontent.com/lefiera/rbx-setup/refs/heads/main/version.txt"
 $downloaderUrl = "https://raw.githubusercontent.com/lefiera/rbx-setup/refs/heads/main/rdd.bat"
+$domains = @("weao.xyz", "whatexpsare.online", "weao.gg")
+$headers = @{ "User-Agent" = "WEAO-3PService" }
 
-$version = (Invoke-WebRequest -Uri $versionUrl -UseBasicParsing).Content.Trim()
+$version = $null
+foreach ($domain in $domains) {
+    try {
+        $response = Invoke-RestMethod -Uri "https://$domain/api/status/exploits" -Headers $headers -ErrorAction Stop
+        $volt = $response | Where-Object { $_.title -eq "Volt" }
+        if ($volt -and $volt.rbxversion) {
+            $version = $volt.rbxversion
+            break
+        }
+    } catch {
+        continue
+    }
+}
+
+if (-not $version) {
+    Write-Host "Error: Could not retrieve Volt version from any WEAO domain" -ForegroundColor Red
+    exit 1
+}
 
 $downloaderPath = Join-Path $env:TEMP "rdd.bat"
 Invoke-WebRequest -Uri $downloaderUrl -OutFile $downloaderPath -UseBasicParsing
