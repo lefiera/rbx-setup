@@ -142,5 +142,4 @@ for %%P in (%PKGS%) do (
 )
 
 echo.
-echo [+] All packages downloaded and extracted successfully.
-echo [+] Output: %OUTPUT%
+echo [+] Downloaded Roblox
